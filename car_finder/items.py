@@ -58,3 +58,50 @@ class CarItem(scrapy.Item):
     city = scrapy.Field(input_processor=MapCompose(get_city), output_processor=TakeFirst())
     country = scrapy.Field(input_processor=MapCompose(get_country), output_processor=TakeFirst())
     url = scrapy.Field(output_processor=TakeFirst())
+
+
+class BaseNameableItem(scrapy.Item):
+    name = scrapy.Field()
+
+
+class Country(BaseNameableItem):
+    pass
+
+
+class City(BaseNameableItem):
+    country = scrapy.Field()
+
+
+class CarBrand(BaseNameableItem):
+    pass
+
+
+class CarModel(BaseNameableItem):
+    brand = scrapy.Field()
+
+
+class Generation(BaseNameableItem):
+    model = scrapy.Field()
+
+
+class Car(scrapy.Item):
+    model = scrapy.Field()
+    generation = scrapy.Field()
+    manufactured = scrapy.Field()
+    purchased = scrapy.Field()
+    name = scrapy.Field()
+    city = scrapy.Field()
+    country = scrapy.Field()
+    capacity = scrapy.Field()
+    horse_power = scrapy.Field()
+    engine_type = scrapy.Field()
+    gear_type = scrapy.Field()
+    transmission = scrapy.Field()
+    url_fingerprint = scrapy.Field()
+    url = scrapy.Field()
+
+
+class CarSaleItem(scrapy.Item):
+    price = scrapy.Field()
+    url_fingerprint = scrapy.Field()
+    url = scrapy.Field()

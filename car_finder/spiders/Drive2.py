@@ -9,28 +9,32 @@ from scrapy.utils.request import request_fingerprint
 
 from car_finder.items import CarItem
 
-car_brands_map = {'alfaromeo': 'b_17',
-                  'audi': 'b_2',
-                  'bmw': 'b_3',
-                  'chevrolet': 'b_20',
-                  'citroen': 'b_4',
-                  'ford': 'b_40',
-                  'honda': 'b_43',
-                  'infiniti': 'b_7',
-                  'kia': 'b_25',
-                  'lexus': 'b_9',
-                  'mazda': 'b_29',
-                  'mercedes': 'b_47',
-                  'mitsubishi': 'b_51',
-                  'nissan': 'b_52',
-                  'opel': 'b_54',
-                  'saab': 'b_30',
-                  'skoda': 'b_15',
-                  'subaru': 'b_62',
-                  'suzuki': 'b_63',
-                  'toyota': 'b_64',
-                  'volvo': 'b_16',
-                  'volkswagen': 'b_65', }
+car_brands_map = {
+    'alfaromeo': 'b_17',
+    'audi': 'b_2',
+    'bmw': 'b_3',
+    'chevrolet': 'b_20',
+    'citroen': 'b_4',
+    'ford': 'b_40',
+    'honda': 'b_43',
+    'infiniti': 'b_7',
+    'kia': 'b_25',
+    'lexus': 'b_9',
+    'mazda': 'b_29',
+    'mercedes': 'b_47',
+    'mitsubishi': 'b_51',
+    'nissan': 'b_52',
+    'opel': 'b_54',
+    'saab': 'b_30',
+    'seat': 'b_14',
+    'skoda': 'b_15',
+    'subaru': 'b_62',
+    'suzuki': 'b_63',
+    'toyota': 'b_64',
+    'volvo': 'b_16',
+    'volkswagen': 'b_65',
+    'hyundai': 'b_6',
+}
 inverted_map = {a: b for b, a in car_brands_map.items()}
 url_template = 'https://www.drive2.com/ajax/carsearch.cshtml?context={brand_id}&start={start}&sort=Selling'
 base_url = 'https://www.drive2.com{}'
@@ -38,8 +42,9 @@ base_url = 'https://www.drive2.com{}'
 
 class Drive2Spider(scrapy.Spider):
     name = 'Drive2'
+    handle_httpstatus_list = [429]
     allowed_domains = ['www.drive2.com', 'drive2.com', 'www.drive2.ru', 'drive2.ru']
-    start_urls = [f'https://www.drive2.com/ajax/carsearch.cshtml?context={brand_id}&start=0&sort=Selling' for _, brand_id in car_brands_map.items()]
+    start_urls = [url_template.format(brand_id=brand_id, start=0) for _, brand_id in car_brands_map.items()]
     counter = {brand: 0 for brand in car_brands_map.keys()}
 
     def parse(self, response):
@@ -85,7 +90,7 @@ class Drive2Spider(scrapy.Spider):
             loader.add_value('generation', self.get_generation(response))
             yield loader.load_item()
         except Exception as e:
-            self.logger.debug(f'Can not parse car info: {e}')
+            print(f'Can not parse car info: {e}')
             yield loader.load_item()
 
     def get_years(self, response):
@@ -93,48 +98,48 @@ class Drive2Spider(scrapy.Spider):
             years_pattern = "//div[@class='c-car-forsale']/ul/li[contains(text(), 'Manufactured') or contains(text(), 'Purchased')]"
             return response.xpath(years_pattern)[0].extract()
         except (IndexError, AttributeError):
-            pass
+            self.logger.debug('Can not parse years')
 
     def get_brand(self, response):
         try:
             return response.xpath('//a[@data-ym-target="car2brand"]/text()')[0].extract()
         except (IndexError, AttributeError):
-            pass
+            self.logger.debug('Can not parse brand')
 
     def get_model(self, response):
         try:
             return response.xpath('//a[@data-ym-target="car2model"]/text()')[0].extract()
         except (IndexError, AttributeError):
-            pass
+            self.logger.debug('Can not parse model')
 
     def get_generation(self, response):
         try:
             return response.xpath('//a[@data-ym-target="car2gen"]/text()')[0].extract()
         except (IndexError, AttributeError):
-            pass
+            self.logger.debug('Can not parse generation')
 
     def get_price(self, el):
         try:
-            return el.xpath('div//span[@class="c-car-card__price"]')[0].text
+            return el.xpath('div//span[@class="c-car-card-sa__price"]')[0].text
         except (IndexError, AttributeError):
             self.logger.debug('Can not parse price')
 
     def get_title(self, el):
         try:
-            return el.xpath('div//a[@class="c-car-title c-link c-link--text"]')[0].text
+            return el.xpath('div//span[@class="c-car-title  c-link"]')[0].text
         except (IndexError, AttributeError):
             self.logger.debug('Can not parse title')
 
     def get_url(self, el):
         try:
-            url = el.xpath('div//a[@class="c-car-title c-link c-link--text"]')[0].attrib['href']
+            url = el.xpath('a[@class="u-link-area"]')[0].attrib['href']
             return base_url.format(url)
         except (IndexError, AttributeError):
             self.logger.debug('Can not parse url')
 
     def get_geo(self, el):
         try:
-            return el.xpath('div//div[@class="c-car-card__info "]/span')[0].text
+            return el.xpath('div/div[@class="c-car-card-sa__location"]/span')[0].text
         except (IndexError, AttributeError):
             self.logger.debug('Can not parse geo')
 
