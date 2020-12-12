@@ -1,0 +1,9 @@
+scrapy
+scrapy-redis
+lxml
+scrapy-useragents
+stem
+pillow
+scrapyd
+scrapyd-client
+requests

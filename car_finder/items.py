@@ -6,7 +6,7 @@
 # https://doc.scrapy.org/en/latest/topics/items.html
 import re
 import scrapy
-from scrapy.loader.processors import MapCompose, TakeFirst
+from itemloaders.processors import TakeFirst, MapCompose
 
 from car_finder import settings
 
@@ -58,18 +58,21 @@ class CarItem(scrapy.Item):
     city = scrapy.Field(input_processor=MapCompose(get_city), output_processor=TakeFirst())
     country = scrapy.Field(input_processor=MapCompose(get_country), output_processor=TakeFirst())
     url = scrapy.Field(output_processor=TakeFirst())
+    image_urls = scrapy.Field()
+    images = scrapy.Field()
 
 
 class BaseNameableItem(scrapy.Item):
-    name = scrapy.Field()
+    name = scrapy.Field(output_processor=TakeFirst())
 
 
-class Country(BaseNameableItem):
-    pass
+class Country(scrapy.Item):
+    country = scrapy.Field(input_processor=MapCompose(get_country), output_processor=TakeFirst())
 
 
-class City(BaseNameableItem):
+class City(scrapy.Item):
     country = scrapy.Field()
+    city = scrapy.Field(input_processor=MapCompose(get_country), output_processor=TakeFirst())
 
 
 class CarBrand(BaseNameableItem):
@@ -87,12 +90,17 @@ class Generation(BaseNameableItem):
 class Car(scrapy.Item):
     model = scrapy.Field()
     generation = scrapy.Field()
-    manufactured = scrapy.Field()
-    purchased = scrapy.Field()
-    name = scrapy.Field()
+
+
+class CarProfile(BaseNameableItem):
+    car = scrapy.Field()
+    title = scrapy.Field(output_processor=TakeFirst())
+    manufactured = scrapy.Field(input_processor=MapCompose(extract_manufactured), output_processor=TakeFirst(), )
+    purchased = scrapy.Field(input_processor=MapCompose(extract_purchased), output_processor=TakeFirst(), )
     city = scrapy.Field()
     country = scrapy.Field()
     capacity = scrapy.Field()
+    mileage = scrapy.Field()
     horse_power = scrapy.Field()
     engine_type = scrapy.Field()
     gear_type = scrapy.Field()
@@ -102,6 +110,5 @@ class Car(scrapy.Item):
 
 
 class CarSaleItem(scrapy.Item):
+    car_profile = scrapy.Field()
     price = scrapy.Field()
-    url_fingerprint = scrapy.Field()
-    url = scrapy.Field()
